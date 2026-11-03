@@ -216,11 +216,18 @@ tidy_survey_core <- function(dt, id_cols) {
 # Split answers into options. Commas inside parentheses belong to the option
 # label, e.g. "Vigorous activity (e.g. running, swimming)".
 split_survey_options <- function(response) {
-  parts <- strsplit(as.character(response), ",(?![^()]*\\))", perl = TRUE)
-  lapply(parts, function(x) {
+  if (length(response) == 0) return(list())
+
+  # Bolt optimization: Survey datasets have tens of thousands of rows but only a few
+  # hundred unique response strings. Parsing only the unique strings with regex and
+  # mapping back via match() reduces complexity from O(N) regex evaluations to O(U).
+  u_resp <- unique(response)
+  parts <- strsplit(as.character(u_resp), ",(?![^()]*\\))", perl = TRUE)
+  u_res <- lapply(parts, function(x) {
     x <- gsub("\\s+", " ", trimws(x))
     unique(x[!is.na(x) & x != ""])
   })
+  u_res[match(response, u_resp)]
 }
 
 # Use the most common capitalization of each option everywhere, so that e.g.
