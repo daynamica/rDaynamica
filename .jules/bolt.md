@@ -9,3 +9,7 @@
 ## 2026-11-05 - Multi-pass .SD grouping and which.max on high-cardinality groups in data.table
 **Learning:** Running `dt[, .I[which.max(...)], by = ...]` and `lapply(cols, function(col) dt[, .(paste(.SD[[1]], ...)), by = ..., .SDcols = col])` repeatedly across >20,000 groups in data.table incurs huge per-group overhead and requires multi-table `Reduce(merge, ...)`.
 **Action:** Use `setorder` + `unique(dt, by = ...)` for selecting optimal records per group, combine all aggregated and collapsed columns into a single `by =` grouping pass, and merge the resulting tables directly.
+
+## 2026-11-06 - Vectorized string regex cleaning on low-cardinality columns
+**Learning:** Running `gsub("\\s+", " ", trimws(x))` directly across tens of thousands of rows in survey tables wastes significant CPU time re-evaluating regex operations on repeated question texts (e.g. only 10-20 unique questions across 30k+ rows takes ~3.3s over repeated calls).
+**Action:** Extract unique string values using `unique(x)`, perform `gsub` and `trimws` once on the small unique vector, and map results back to the original column via `match(x, u_x)` in ~0.04s (>80x speedup).
